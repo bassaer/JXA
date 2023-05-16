@@ -25,12 +25,12 @@ function formatDate (date, format) {
 
 function createDialog(title, url, start, end) {
   try {
-   	const result = app.displayDialog(`${title} に参加しますか？`, {
+    const result = app.displayDialog(`${title} に参加しますか？`, {
       withTitle: `${formatDate(start, 'HH:mm')} 〜 ${formatDate(end, 'HH:mm')}`,
       buttons: [BUTTON_OK, BUTTON_CANCEL],
       defaultButton: BUTTON_OK,
       cancelButton: BUTTON_CANCEL
-    })
+    });
     if (result && result.buttonReturned === BUTTON_OK) {
       openUrl(url);
     }
@@ -41,19 +41,20 @@ const app = Application.currentApplication(); // 現在のアプリケーショ�
 app.includeStandardAdditions = true; // 標準コマンドを使用可能にする
 const calendar = Application("Calendar");
 
-const events = calendar.calendars[CALENDAR_NAME].events;
-const now = Date.now();
+const now = new Date();
+const events = calendar.calendars[CALENDAR_NAME].events.whose({
+  _and: [
+    { startDate: { _lessThan: now } },
+    { endDate: { _greaterThan: now } },
+    { location: { _beginsWith: 'https://' } },
+  ]
+});
+
 for (event in events) {
-	if (
-    events[event].startDate() < now
-    && events[event].endDate() > now
-    && events[event].location().startsWith("https://")
-  ) {
-    createDialog(
-      events[event].summary(),
-      events[event].location(),
-      events[event].startDate(),
-      events[event].endDate()
-    );
-  }
+  createDialog(
+    events[event].summary(),
+    events[event].location(),
+    events[event].startDate(),
+    events[event].endDate()
+  );
 }
